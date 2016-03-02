@@ -54,6 +54,7 @@ space tiles out so they aren't placed close to themselves.
 We have generators that create custom snippets for unity and unreal, and you can generate a snippet for your own custom engine too.
 To run the generators, just clone this repo to something with a unix shell, make, python and cpp (cpp comes with any or c++ compiler)
 installed (cygwin should do, or osx or linux), and run make. Also require the PIL python libary.
+You can download prebuilt versions of the unity and unreal snippets  [here](https://github.com/Artomatix/infinity_tile_shader/releases/download/v0.1/precompiled_unity_unreal.zip).
 
 ### Unity
 You can get our unity plugin from our site [here](https://artomatix.com/?c=github) which handles all of this, but if you don't want to, you can use our shader snippet from here
