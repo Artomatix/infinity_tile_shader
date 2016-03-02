@@ -1,8 +1,8 @@
 # Infinity Tile Shader
 Shader snippets for Artomatix Infinity Tiles (Wang Tiles)
 
-Artomatix Infinity Tiles are the Artomatix branding of something called Wang Tiles.
-Artomatix generates the Wang tiles automatically, which is normally a tedious and lengthy process (example here: http://www.pathofexile.com/forum/view-thread/55091).
+Artomatix Infinity Tiles are automatically generated Wang Tiles.
+Artomatix generates the Wang tiles, which is normally a tedious and lengthy process (example here: http://www.pathofexile.com/forum/view-thread/55091).
 This repository contains some shader snippets for rendering these tiles in either HLSL or GLSL.
 
 ## What are Wang Tiles?
@@ -29,16 +29,16 @@ tile always tiles with the tiles beside it in our packed texture.
 We use an approach based on the one desribed in http://graphics.stanford.edu/papers/tile_mapping_gh2004/final/paper_final.pdf
 to render the wang tiles using a fragment shader.
 The basic algorithm is as follows:
-- calculate which tile we are currently in
-- generate a hash for each of the four edges of the current tile. Because the wang tile set we are using is complete,
-we are always able to render any combination of edge hashes.
-- by carefully choosing the values we hash, we can make sure that the edge colours always match. Eg: we might hash the west side
+- Calculate which tile we are currently in
+- Generate a hash for each of the four edges of the current tile. Because the wang tile set we are using is complete,
+we are always able to render any combination of edge hashes
+- By carefully choosing the values we hash, we can make sure that the edge colours always match. Eg: we might hash the west side
 with hash(x), and the east side with hash(x-1). In this way, the west edge of tile (n, m) will always be the same as the east edge 
 of tile (n+1, m)
-- we actually use both the x and y in our hashes with some multiplication and addition as it gives better results but we make sure 
+- We actually use both the x and y in our hashes with some multiplication and addition as it gives better results but we make sure 
 not to violate the basic principle
 - The final step is to turn the 4 edge hashes into uv a tile index (x and y, from 0-4), and then turn that into a texture coordinate
-- finally we do the texture sample. We do that here because we need to do a slightly specialised texture sample. Because our texture
+- Finally we do the texture sample. We do that here because we need to do a slightly specialised texture sample. Because our texture
 coords can vary a lot from one pixel to the next at a tile border, we can end up using bad mip levels just at the edges. This is
 obviously undesireable, so we use the built in mechanism of ddx and ddy to fix this (google ddx ddy hlsl if you don't know what
 this is)
@@ -56,7 +56,7 @@ To run the generators, just clone this repo to something with a unix shell, make
 installed (cygwin should do, or osx or linux), and run make. Also require the PIL python libary.
 
 ### Unity
-You can get our unity plugin from our site which handles all of this, but if you don't want to, you can use our shader snippet from here
+You can get our unity plugin from our site [here](https://artomatix.com/?c=github) which handles all of this, but if you don't want to, you can use our shader snippet from here
 directly (it's the same code).
 running make will create unity_wang.cginc. You can then include this and use the wangSample function it defines, which takes two params,
 a texture sampler (which must contain a packed wang tile set), and the input uv coords. You must also define a sampler called wangSampler,
@@ -81,4 +81,4 @@ Have a look at custom_base.txt, and put in whatever settings you want in there, 
 A snippet will be generated in custom_snippet.txt, which you can integrate into your game as you see fit.
 If you do use the pregenerated section, you'll need to define a sampler called wangSampler and pass in the wang_layout_array.png texture 
 as described in the unreal and unity sections.
-Make sure to diable mipmapping and compression on this texture, and do no texture filtering (filtering set to point or nearest).
+Make sure to disable mipmapping and compression on this texture, and do no texture filtering (filtering set to point or nearest).
