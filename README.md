@@ -67,7 +67,8 @@ Alternatively, you can omit the wangSampler and disable the pregenerated section
 unity_base.cginc.
 
 ### Unreal
-We should have a plugin up for unreal shortly, but until then, you can grab the shaders form here.
+You can get our unreal plugin from our site [here](https://artomatix.com/?c=github) which handles all of this, but if you don't want to, you can use our shader snippet from here
+directly (it's the same code).
 To add in the snippet (which is generated into unreal_snippet.txt), you need to create a material in unreal, and add a custom node.
 Then paste the contents of unreal_snippet.txt into the code box in the custom node. On the custom node, set a few properties: Set 
 Output Type to CMOT Float 2, create two inputs called uv, and wang.
