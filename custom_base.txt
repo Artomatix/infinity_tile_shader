@@ -1,7 +1,9 @@
 #include "dont_modify.txt"
 
 //#define FLIP_V        // if the v component of your uvs is flipped, enable this
-//#define NO_PREDEFINED // enable this if you don't want the predefined chunk in the centre
 //#define GLSL          // enable this if you're using glsl (as opposed to hlsl)
+
+#define PREDEFINED      // disable this if you want to use the hashing method
+
 #include "shader_base.frag"
 

@@ -2,13 +2,14 @@
 
 #include "helper.h"
 
-// need to disable it mostly for some compute shader internal something or other or it fails to compile
+
 ESCAPED_HASH(if) COMPUTESHADER
     return float4(0, 1, 0, 1);
 ESCAPED_HASH(else)
     #define NO_FUNCTION
     #define FLIP_V
+    #define PREDEFINED
     #define GRID_SAMPLE(uv) wang.Sample(wangSampler, float2(uv.x, uv.y))
-    #define FINAL_SAMPLE_OVERRIDE(coords) tex.Sample(texSampler, coords)
+    #define FINAL_SAMPLE_OVERRIDE(coords) coords
     #include "shader_base.frag"
 ESCAPED_HASH(endif)

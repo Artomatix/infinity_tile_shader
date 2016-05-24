@@ -14,75 +14,6 @@
     #endif
 #endif
 
-// You may be wondering why there's a bunch of horrible macros instead of functions.
-// That's to support embedding in a custom material node in unreal, where you can only
-// input one big long function body, so you can't declare functions.
-
-
-// You may also wonder why we used a bunch of ifs here instead of one if and a bunch of
-// else-ifs. When we used a bunch of else-ifs the unity shader compiler crashed with a stack overflow.
-#define GET_TILE_FROM_PREDEFINED(tile, tileX, tileY)                    \
-{                                                                       \
-    float2 hashUv = float2(tileX, tileY);                               \
-    hashUv += float2(0.5, 0.5);                                         \
-    hashUv /= float2(grid_size, grid_size);                             \
-    int grid_entry = int(GRID_SAMPLE(hashUv).r * 255.0);                \
-                                                                        \
-    if(grid_entry == 0)                                                 \
-        tile = float2(0.0, 3.0);                                        \
-    if(grid_entry == 1)                                                 \
-        tile = float2(3.0, 3.0);                                        \
-    if(grid_entry == 2)                                                 \
-        tile = float2(0.0, 2.0);                                        \
-    if(grid_entry == 3)                                                 \
-        tile = float2(3.0, 2.0);                                        \
-    if(grid_entry == 4)                                                 \
-        tile = float2(1.0, 3.0);                                        \
-    if(grid_entry == 5)                                                 \
-        tile = float2(2.0, 3.0);                                        \
-    if(grid_entry == 6)                                                 \
-        tile = float2(1.0, 2.0);                                        \
-    if(grid_entry == 7)                                                 \
-        tile = float2(2.0, 2.0);                                        \
-    if(grid_entry == 8)                                                 \
-        tile = float2(0.0, 0.0);                                        \
-    if(grid_entry == 9)                                                 \
-        tile = float2(3.0, 0.0);                                        \
-    if(grid_entry == 10)                                                \
-        tile = float2(0.0, 1.0);                                        \
-    if(grid_entry == 11)                                                \
-        tile = float2(3.0, 1.0);                                        \
-    if(grid_entry == 12)                                                \
-        tile = float2(1.0, 0.0);                                        \
-    if(grid_entry == 13)                                                \
-        tile = float2(2.0, 0.0);                                        \
-    if(grid_entry == 14)                                                \
-        tile = float2(1.0, 1.0);                                        \
-    if(grid_entry == 15)                                                \
-        tile = float2(2.0, 1.0);                                        \
-}
-
-#define GET_SENW(senw, tile)                                            \
-{                                                                       \
-	if     (tile.x == 0.0 && tile.y == 3.0) senw = float4(0, 0, 0, 0);  \
-	else if(tile.x == 3.0 && tile.y == 3.0) senw = float4(0, 0, 0, 1);  \
-	else if(tile.x == 0.0 && tile.y == 2.0) senw = float4(0, 0, 1, 0);  \
-	else if(tile.x == 3.0 && tile.y == 2.0) senw = float4(0, 0, 1, 1);  \
-	else if(tile.x == 1.0 && tile.y == 3.0) senw = float4(0, 1, 0, 0);  \
-	else if(tile.x == 2.0 && tile.y == 3.0) senw = float4(0, 1, 0, 1);  \
-	else if(tile.x == 1.0 && tile.y == 2.0) senw = float4(0, 1, 1, 0);  \
-	else if(tile.x == 2.0 && tile.y == 2.0) senw = float4(0, 1, 1, 1);  \
-	else if(tile.x == 0.0 && tile.y == 0.0) senw = float4(1, 0, 0, 0);  \
-	else if(tile.x == 3.0 && tile.y == 0.0) senw = float4(1, 0, 0, 1);  \
-	else if(tile.x == 0.0 && tile.y == 1.0) senw = float4(1, 0, 1, 0);  \
-	else if(tile.x == 3.0 && tile.y == 1.0) senw = float4(1, 0, 1, 1);  \
-	else if(tile.x == 1.0 && tile.y == 0.0) senw = float4(1, 1, 0, 0);  \
-	else if(tile.x == 2.0 && tile.y == 0.0) senw = float4(1, 1, 0, 1);  \
-	else if(tile.x == 1.0 && tile.y == 1.0) senw = float4(1, 1, 1, 0);  \
-	else if(tile.x == 2.0 && tile.y == 1.0) senw = float4(1, 1, 1, 1);  \
-    else senw = float4(0,0,0,0);                                        \
-}
-
 #define HASH(in1, in2) (int(frac(sin(dot(float2(in1+2*in2, in1+in2),float2(12.9898,78.233))) * 43758.5453) > 0.5))
 
 // This function will sample a packed wang tile set with two edge colours. This is pretty much the only kind of wang
@@ -104,22 +35,15 @@
 // obviously undesireable, so we use the built in mechanism of ddx and ddy to fix this (google ddx ddy hlsl if you don't know what
 // this is)
 //
-// Finally, this function also supports a predefined chunk passed in as a texture. The texture is generated by wang.py, and just
-// contains values from 0-15 in each pixel corresponding to the 16 possible tiles in the tileset. Where the dimensions of 
-// this predefined chunk are n*n, the first n*n tiles around the origin will use the predefined chunk from that texture.
-// This can be disabled by defining NO_PREDEFINED.
+// Finally, this function also supports a predefined chunk passed in as a texture, when you define the macro PREDEFINED.
+// The texture is generated by wang.py, and just contains the xy grid coords in the 4x4 tile set in the red and green channels.
 // The reason that we want this is that while the hashing method described above will produce decent results, there's no way to
 // ensure that it doesn't place the same tile beside itself. The predefined section is generated sequentially, and tries to
-// space tiles out so they aren't placed close to themselves.
+// space tiles out so they aren't placed close to themselves, but will repeat over long distances.
 #ifndef NO_FUNCTION
 float4 wangSample(sampler2D texSampler, float2 uv)
 {
 #endif
-    
-#ifndef NO_PREDEFINED
-        #include "wang_layout_array.txt"
-#endif
-
     #ifdef FLIP_V
         uv.y = 1.0-uv.y;
     #endif
@@ -130,184 +54,144 @@ float4 wangSample(sampler2D texSampler, float2 uv)
 	int tileY = int(t.y);
 
     float2 tile = float2(0.0, 0.0);
-
-#ifndef NO_PREDEFINED
-    int predef_tileX = tileX;
-    int predef_tileY = tileY;
-
-    #ifdef FLIP_V
-        predef_tileY = grid_size - tileY - 1;
-    #endif
     
-    // grab from predefined
-    if(tileX >= 0 && tileX < grid_size && tileY >= 0 && tileY < grid_size)
+    #ifdef PREDEFINED 
     {
-        GET_TILE_FROM_PREDEFINED(tile, tileX, predef_tileY)
+        #include "wang_layout_array.txt" // defines grid_size
+
+        int predef_tileX = tileX;
+        int predef_tileY = tileY;
+
+        #ifdef FLIP_V
+            predef_tileY = grid_size - tileY - 1;
+        #endif
+
+        // grab from predefined
+        float2 hashUv = float2(tileX, predef_tileY);
+        hashUv += float2(0.5, 0.5);
+        hashUv /= float2(grid_size, grid_size);
+        int grid_entry = int(GRID_SAMPLE(hashUv).r * 255.0);
+
+        tile = GRID_SAMPLE(hashUv).rg * 255.0;
     }
-    // use the hashing algorithm
-    else
-#endif // NO_PREDFINED
+    #else // PREDEFINED
     {
+        // use the hashing algorithm
+
         // senw - South, East, North, West
-        int s = 0;
-        int e = 0;
-        int n = 0;
-        int w = 0;
-        
-        // calculate s
-// here we handle the case where we're at the edge of the predefined area
-#ifndef NO_PREDEFINED
-        if(tileY == grid_size && tileX >= 0 && tileX < grid_size)
-        {
-            float2 tile_tmp = float2(0, 0);
-            #ifdef FLIP_V
-                GET_TILE_FROM_PREDEFINED(tile_tmp, tileX, predef_tileY+1);
-            #else
-                GET_TILE_FROM_PREDEFINED(tile_tmp, tileX, predef_tileY-1);
-            #endif
-            float4 senw;
-            GET_SENW(senw, tile_tmp);
+        int s = HASH(tileY-1, tileX);
+        int e = HASH(tileX+1, tileY);
+        int n = HASH(tileY, tileX);
+        int w = HASH(tileX, tileY);
 
-            s = int(senw.z);
-        }
-        else
-#endif // NO_PREDFINE
-// here we do the normal hash when we're not in the predefined area
-        {
-            s = HASH(tileY-1, tileX);
-        }
-        
-        // calculate e
-#ifndef NO_PREDEFINED
-        if(tileX == -1 && tileY >= 0 && tileY < grid_size)
-        {
-            float2 tile_tmp = float2(0, 0);
-            GET_TILE_FROM_PREDEFINED(tile_tmp, tileX+1, predef_tileY);
-            float4 senw;
-            GET_SENW(senw, tile_tmp);
-
-            e = int(senw.w);
-        }
-        else
-#endif // NO_PREDFINED
-        {
-            e = HASH(tileX+1, tileY);
-        }
-        
-        // calculate n
-#ifndef NO_PREDEFINED
-        if(tileY == -1 &&  tileX >= 0 && tileX < grid_size)
-        {
-            float2 tile_tmp = float2(0, 0);
-            #ifdef FLIP_V
-                GET_TILE_FROM_PREDEFINED(tile_tmp, tileX, predef_tileY-1);
-            #else
-                GET_TILE_FROM_PREDEFINED(tile_tmp, tileX, predef_tileY+1);
-            #endif
-            float4 senw;
-            GET_SENW(senw, tile_tmp);
-
-            n = int(senw.x);
-        }
-        else
-#endif // NO_PREDFINED
-        {
-            n = HASH(tileY, tileX);
-        }
-        
-        // caclulate w
-#ifndef NO_PREDEFINED
-        if(tileX == grid_size && tileY >= 0 && tileY < grid_size)
-        {
-            float2 tile_tmp = float2(0, 0);
-            GET_TILE_FROM_PREDEFINED(tile_tmp, tileX-1, predef_tileY);
-            float4 senw;
-            GET_SENW(senw, tile_tmp);
-
-            w = int(senw.y);
-        }
-        else
-#endif // NO_PREDFINED
-        {
-            w = HASH(tileX, tileY);
-        }
-        
         // turn senw values into a tile specifier (x,y coord) of the tile to use (from the tileset)        
-        if(s == 0)
+        // in webgl we can't do lookup tables, so we use a big 'ol nasty if-else chain
+
+        #ifndef NO_LOOKUP_TABLES
         {
-            if(e == 0)
+            static const float2 tiles[16] = 
             {
-                if(n == 0)
-                {
-                    if(w == 0)
-                        tile = float2(0.0, 3.0); // 0, 0, 0, 0
-                    else // w == 1.0
-                        tile = float2(3.0, 3.0); // 0, 0, 0, 1
-                }
-                else // n == 1.0
-                {
-                    if(w == 0)
-                        tile = float2(0.0, 2.0); // 0, 0, 1, 0
-                    else // w == 1.0
-                        tile = float2(3.0, 2.0); // 0, 0, 1, 1
-                }   
-            }
-            else // e == 1.0
+                float2(0.0, 3.0), // 0, 0, 0, 0     // 0
+                float2(3.0, 3.0), // 0, 0, 0, 1     // 1
+                float2(0.0, 2.0), // 0, 0, 1, 0     // 2
+                float2(3.0, 2.0), // 0, 0, 1, 1     // 3
+                float2(1.0, 3.0), // 0, 1, 0, 0     // 4
+                float2(2.0, 3.0), // 0, 1, 0, 1     // 5
+                float2(1.0, 2.0), // 0, 1, 1, 0     // 6
+                float2(2.0, 2.0), // 0, 1, 1, 1     // 7
+                float2(0.0, 0.0), // 1, 0, 0, 0     // 8
+                float2(3.0, 0.0), // 1, 0, 0, 1     // 9 
+                float2(0.0, 1.0), // 1, 0, 1, 0     // 10
+                float2(3.0, 1.0), // 1, 0, 1, 1     // 11
+                float2(1.0, 0.0), // 1, 1, 0, 0     // 12
+                float2(2.0, 0.0), // 1, 1, 0, 1     // 13
+                float2(1.0, 1.0), // 1, 1, 1, 0     // 14
+                float2(2.0, 1.0), // 1, 1, 1, 1     // 15
+            };
+
+            tile = tiles[w + 2*n + 4*e + 8*s];
+
+        }    
+        #else // ndef NO_LOOKUP_TABLES
+        {
+            if(s == 0)
             {
-                if(n == 0)
+                if(e == 0)
                 {
-                    if(w == 0)
-                        tile = float2(1.0, 3.0); // 0, 1, 0, 0
-                    else // w == 1.0
-                        tile = float2(2.0, 3.0); // 0, 1, 0, 1
+                    if(n == 0)
+                    {
+                        if(w == 0)
+                            tile = float2(0.0, 3.0); // 0, 0, 0, 0
+                        else // w == 1.0
+                            tile = float2(3.0, 3.0); // 0, 0, 0, 1
+                    }
+                    else // n == 1.0
+                    {
+                        if(w == 0)
+                            tile = float2(0.0, 2.0); // 0, 0, 1, 0
+                        else // w == 1.0
+                            tile = float2(3.0, 2.0); // 0, 0, 1, 1
+                    }   
                 }
-                else // n == 1.0
+                else // e == 1.0
                 {
-                    if(w == 0)
-                        tile = float2(1.0, 2.0); // 0, 1, 1, 0
-                    else // w == 1.0
-                        tile = float2(2.0, 2.0); // 0, 1, 1, 1
+                    if(n == 0)
+                    {
+                        if(w == 0)
+                            tile = float2(1.0, 3.0); // 0, 1, 0, 0
+                        else // w == 1.0
+                            tile = float2(2.0, 3.0); // 0, 1, 0, 1
+                    }
+                    else // n == 1.0
+                    {
+                        if(w == 0)
+                            tile = float2(1.0, 2.0); // 0, 1, 1, 0
+                        else // w == 1.0
+                            tile = float2(2.0, 2.0); // 0, 1, 1, 1
+                    }   
                 }   
             }   
-        }   
-        else // s == 1.0
-        {
-            if(e == 0)
+            else // s == 1.0
             {
-                if(n == 0)
+                if(e == 0)
                 {
-                    if(w == 0)
-                        tile = float2(0.0, 0.0); // 1, 0, 0, 0
-                    else // w == 1.0
-                        tile = float2(3.0, 0.0); // 1, 0, 0, 1
+                    if(n == 0)
+                    {
+                        if(w == 0)
+                            tile = float2(0.0, 0.0); // 1, 0, 0, 0
+                        else // w == 1.0
+                            tile = float2(3.0, 0.0); // 1, 0, 0, 1
+                    }
+                    else // n == 1.0
+                    {
+                        if(w == 0)
+                            tile = float2(0.0, 1.0); // 1, 0, 1, 0
+                        else // w == 1.0
+                            tile = float2(3.0, 1.0); // 1, 0, 1, 1
+                    }
                 }
-                else // n == 1.0
+                else // e == 1.0
                 {
-                    if(w == 0)
-                        tile = float2(0.0, 1.0); // 1, 0, 1, 0
-                    else // w == 1.0
-                        tile = float2(3.0, 1.0); // 1, 0, 1, 1
-                }
-            }
-            else // e == 1.0
-            {
-                if(n == 0)
-                {
-                    if(w == 0)
-                        tile = float2(1.0, 0.0); // 1, 1, 0, 0
-                    else // w == 1.0
-                        tile = float2(2.0, 0.0); // 1, 1, 0, 1
-                }
-                else // n == 1.0
-                {
-                    if(w == 0)
-                        tile = float2(1.0, 1.0); // 1, 1, 1, 0
-                    else // w == 1.0
-                        tile = float2(2.0, 1.0); // 1, 1, 1, 1
+                    if(n == 0)
+                    {
+                        if(w == 0)
+                            tile = float2(1.0, 0.0); // 1, 1, 0, 0
+                        else // w == 1.0
+                            tile = float2(2.0, 0.0); // 1, 1, 0, 1
+                    }
+                    else // n == 1.0
+                    {
+                        if(w == 0)
+                            tile = float2(1.0, 1.0); // 1, 1, 1, 0
+                        else // w == 1.0
+                            tile = float2(2.0, 1.0); // 1, 1, 1, 1
+                    }
                 }
             }
         }
+        #endif // ndef NO_LOOKUP_TABLES
     }
+    #endif // PREDEFINED
 
     // calculate the final texture coordinates from the computed tile value
 	float2 finalCoords;

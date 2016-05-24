@@ -7,7 +7,7 @@ shader_base.frag: wang_layout_array.txt helper.h
 wang_layout_array.png: wang_layout_array.txt
 
 wang_layout_array.txt: wang.py
-	./wang.py --size 256 --check_size 3 --print false -o wang_layout_array
+	./wang.py --size 1024 --check_size 3 --print false -o wang_layout_array
 
 clean:
 	-rm wang_layout_array.* 

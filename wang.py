@@ -41,6 +41,16 @@ class Tile(object):
         return self.dirs[2]
     def get_w(self):
         return self.dirs[3]
+    
+    def set_s(self, val):
+        self.dirs[0] = val
+    def set_e(self, val):
+        self.dirs[1] = val
+    def set_n(self, val):
+        self.dirs[2] = val
+    def set_w(self, val):
+        self.dirs[3] = val
+
 
     def get_id(self):
         if self.get_s() == 0:
@@ -89,6 +99,58 @@ class Tile(object):
                         return 14
                     else: 
                         return 15
+
+    def get_xy(self):
+        if self.get_s() == 0:
+            if self.get_e() == 0:
+                if self.get_n() == 0:
+                    if self.get_w() == 0:
+                        return (0, 3)
+                    else: 
+                        return (3, 3)
+                else: 
+                    if self.get_w() == 0:
+                        return (0, 2)
+                    else: 
+                        return (3, 2)
+            else: 
+                if self.get_n() == 0:
+                    if self.get_w() == 0:
+                        return (1, 3)
+                    else: 
+                        return (2, 3)
+                else: 
+                    if self.get_w() == 0:
+                        return (1, 2)
+                    else: 
+                        return (2, 2)
+        else: 
+            if self.get_e() == 0:
+                if self.get_n() == 0:
+                    if self.get_w() == 0:
+                        return (0, 0)
+                    else: 
+                        return (3, 0)
+                else: 
+                    if self.get_w() == 0:
+                        return (0, 1)
+                    else: 
+                        return (3, 1)
+            else: 
+                if self.get_n() == 0:
+                    if self.get_w() == 0:
+                        return (1, 0)
+                    else: 
+                        return (2, 0)
+                else: 
+                    if self.get_w() == 0:
+                        return (1, 1)
+                    else: 
+                        return (2, 1)
+
+ 
+
+
 
     def __eq__(self, other):
         return self.get_id() == other.get_id()
@@ -227,6 +289,10 @@ def generate_grid(size, size_out_to_check_for_duplicates):
 
             perms = get_possibilities(Tile(s, e, n, w), grid, x, y, size_out_to_check_for_duplicates)
             grid[y][x] = get_best_from_perms(perms)
+    
+    for i in range(size):
+        grid[i][0].set_w(grid[i][size-1].get_e()) 
+        grid[0][i].set_n(grid[size-1][i].get_s()) 
 
     return grid
 
@@ -237,8 +303,8 @@ def grid_to_shader_image(grid):
     
     for y in range(size):
         for x in range(size):
-            val = grid[y][x].get_id()
-            data.append((val, val, val))
+            val = grid[y][x].get_xy()
+            data.append((val[0], val[1], 0))
 
     img = Image.new('RGB', (size, size))
     img.putdata(data)
